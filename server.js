@@ -22,3 +22,25 @@ app.listen(port, () => console.log(`Server listening on port ${port} !!`));
 app.use(express.json());
 var cors = require("cors");
 app.use(cors());
+
+app.use(express.static(path.join(__dirname, "web-team-proj-5-front")));
+
+app.get("/", function (request, response) {
+  response.sendFile(
+    path.join(__dirname, "web-team-proj-5-front/build/index.html")
+  );
+});
+
+app.get("/posts", (request, response) => {
+  const sql = "select * from webpdb";
+  con.query(sql, function (err, result, fields) {
+    if (err) throw err;
+    response.json(result);
+  });
+});
+
+app.get("*", function (request, response) {
+  response.sendFile(
+    path.join(__dirname, "web-team-proj-5-front/build/index.html")
+  );
+});
