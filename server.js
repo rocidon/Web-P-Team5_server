@@ -30,9 +30,24 @@ app.get("/", function (request, response) {
     path.join(__dirname, "web-team-proj-5-front/build/index.html")
   );
 });
+app.get(`/posts`, (request, response) => {
+  const sql = `select * from webpdb order by timestamp desc`;
+  con.query(sql, function (err, result, fields) {
+    if (err) throw err;
+    response.json(result);
+  });
+});
 
-app.get("/posts", (request, response) => {
-  const sql = "select * from webpdb";
+app.get(`/populars`, (request, response) => {
+  const sql = `select * from webpdb order by likecount desc`;
+  con.query(sql, function (err, result, fields) {
+    if (err) throw err;
+    response.json(result);
+  });
+});
+
+app.get("/comments", (request, response) => {
+  const sql = `select * from webpdb2`;
   con.query(sql, function (err, result, fields) {
     if (err) throw err;
     response.json(result);
