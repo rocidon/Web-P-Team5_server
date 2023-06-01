@@ -79,7 +79,8 @@ app.get("/", function (request, response) {
   );
 });
 
-app.get(`/posts`, (req, res) => {
+// posts table의 data를 timestamp 내림차순으로 가져오는 api
+app.get(`/posts/all`, (req, res) => {
   const sql = `select * from posts order by timestamp desc;`;
   con.query(sql, function (err, result, fields) {
     if (err) throw err;
@@ -87,6 +88,17 @@ app.get(`/posts`, (req, res) => {
   });
 });
 
+// posts table의 data중 uuid를 가진 data를 가져오는 api
+app.get(`/posts`, (req, res) => {
+  const post_uuid = req.query.uuid;
+  const sql = `select * from posts where uuid = ?;`;
+  con.query(sql, post_uuid, function (err, result, fields) {
+    if (err) throw err;
+    res.json(result);
+  });
+});
+
+// comments table의 data를 timestamp 내림차순으로 가져오는 api
 app.get("/comments", (req, res) => {
   const sql = `select * from comments order by timestamp desc;`;
   con.query(sql, function (err, result, fields) {
@@ -95,6 +107,7 @@ app.get("/comments", (req, res) => {
   });
 });
 
+// posts table에 data를 삽입하는 api
 app.post("/posts", (req, res) => {
   let post_uuid = uuid();
   let post_creator = req.body.params.post_creator;
@@ -122,6 +135,7 @@ app.post("/posts", (req, res) => {
   console.log("UUID:" + post_uuid + " 로 게시글 생성됨.");
 });
 
+// comments table에 data를 삽입하는 api
 app.post("/comments", (req, res) => {
   let post_uuid = req.body.params.post_uuid;
   let comment_uuid = uuid();
@@ -149,14 +163,85 @@ app.post("/comments", (req, res) => {
   console.log("UUID:" + comment_uuid + " 로 댓글 생성됨.");
 });
 
+// posts table의 특정 uuid를 가진 게시물의 text를 update하는 api
+app.post("/posts/update", (req, res) => {
+  const post_uuid = req.body.params.post_uuid;
+  const post_text = req.body.params.post_text;
+
+  /*
+  const post_email = req.body.params.post_email;
+
+  const sql_email = "SELECT COUNT(*) AS result FROM user WHERE email =?";
+
+  con.query(sql_email, post_email, (err, data) => {
+    if (!err) {
+      if (data.result < 1) {
+        res.send("아이디가 존재하지 않습니다.");
+      } else {
+        //Update
+      }
+    } else {
+      res.send(err);
+    }
+  });
+  */
+
+  const sql_update_post = "UPDATE posts SET text = ? where uuid = ?";
+  con.query(sql_update_post, [post_text, post_uuid], (err, data) => {
+    if (!err) {
+      res.send("성공");
+    } else {
+      res.send(err);
+    }
+  });
+});
+
+// comments table의 특정 uuid를 가진 게시물의 text를 수정하는 api
+app.post("/comments/update", (req, res) => {
+  const comments_uuid2 = req.body.params.comments_uuid2;
+  const comments_text = req.body.params.comments_text;
+
+  /*
+  const comments_email = req.body.params.comments_email;
+
+  const sql_email = "SELECT COUNT(*) AS result FROM user WHERE email =?";
+
+  con.query(sql_email, comments_email, (err, data) => {
+    if (!err) {
+      if (data.result < 1) {
+        res.send("아이디가 존재하지 않습니다.");
+      } else {
+        //Update
+      }
+    } else {
+      res.send(err);
+    }
+  });
+  */
+
+  const sql_update_comments = "UPDATE comments SET text = ? where uuid2 = ?";
+  con.query(
+    sql_update_comments,
+    [comments_text, comments_uuid2],
+    (err, data) => {
+      if (!err) {
+        res.send("성공");
+      } else {
+        res.send(err);
+      }
+    }
+  );
+});
+
+// posts table의 특정 uuid를 가진 게시물 + comments table의 특정 uuid를 가진 게시물 들을 삭제하는 api
 app.post("/posts/delete", (req, res) => {
   const post_uuid = req.body.params.post_uuid;
   /*
   const post_email = req.query.post_email;
 
-  const sql_nickname =
+  const sql_email =
     "SELECT COUNT(*) AS result FROM 유저db WHERE email = '?'";
-  con.query(sql_nickname, post_email, (err, data) => {
+  con.query(sql_email, post_email, (err, data) => {
     if (!err) {
       if (data.result < 1) {
         res.send("실패");
@@ -182,14 +267,15 @@ app.post("/posts/delete", (req, res) => {
   });
 });
 
+// comments table의 특정 uuid2를 가진 게시물을 삭제하는 api
 app.post("/comments/delete", (req, res) => {
   const comment_uuid = req.body.params.comment_uuid;
   /*
   const comment_email = req.query.comment_email;
 
-  const sql_nickname =
+  const sql_email =
     "SELECT COUNT(*) AS result FROM 유저db WHERE email = '?'";
-  con.query(sql_nickname, comment_email, (err, data) => {
+  con.query(sql_email, comment_email, (err, data) => {
     if (!err) {
       if (data.result < 1) {
         res.send("실패");
