@@ -194,6 +194,8 @@ app.post("/posts/update", (req, res) => {
       res.send(err);
     }
   });
+
+  console.log("uuid: " + post_uuid + " 의 게시물이 수정되었습니다.");
 });
 
 // comments table의 특정 uuid를 가진 게시물의 text를 수정하는 api
@@ -231,6 +233,7 @@ app.post("/comments/update", (req, res) => {
       }
     }
   );
+  console.log("uuid2: " + comments_uuid2 + " 의 댓글이 수정되었습니다.");
 });
 
 // posts table의 특정 uuid를 가진 게시물 + comments table의 특정 uuid를 가진 게시물 들을 삭제하는 api
@@ -265,6 +268,7 @@ app.post("/posts/delete", (req, res) => {
     console.log(result);
     res.send("true");
   });
+  console.log("uuid: " + post_uuid + " 의 게시물이 삭제되었습니다.");
 });
 
 // comments table의 특정 uuid2를 가진 게시물을 삭제하는 api
@@ -294,6 +298,7 @@ app.post("/comments/delete", (req, res) => {
     console.log(result);
     res.send("true");
   });
+  console.log("uuid: " + comment_uuid + " 의 댓글이 삭제되었습니다.");
 });
 
 /*
