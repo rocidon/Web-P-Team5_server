@@ -44,10 +44,9 @@ con.connect(function (err) {
   const sql_drop_posts_table = "DROP TABLE IF EXISTS posts;";
   const sql_drop_comments_table = "DROP TABLE IF EXISTS comments;";
   const sql_create_posts_table =
-    "CREATE TABLE posts (no INT NOT NULL AUTO_INCREMENT, uuid VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, uid VARCHAR(32) NOT NULL, title VARCHAR(20) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (no), UNIQUE (uuid));";
+    "CREATE TABLE posts (uuid VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, email VARCHAR(32) NOT NULL, title VARCHAR(20) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (uuid), UNIQUE (uuid));";
   const sql_create_comments_table =
-    "CREATE TABLE comments ( no INT NOT NULL AUTO_INCREMENT, uuid VARCHAR(32) NOT NULL, uuid2 VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, uid VARCHAR(32) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (no), UNIQUE (uuid2));";
-
+    "CREATE TABLE comments (uuid VARCHAR(32) NOT NULL, uuid2 VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, email VARCHAR(32) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (uuid2), UNIQUE (uuid2));";
 
   con.query(sql_drop_posts_table, function (err, result) {
     if (err) throw err;
@@ -99,7 +98,7 @@ app.get("/comments", (req, res) => {
 app.post("/posts", (req, res) => {
   let post_uuid = uuid();
   let post_creator = req.body.params.post_creator;
-  let post_uid = req.body.params.post_uid;
+  let post_email = req.body.params.post_email;
   let post_title = req.body.params.post_title;
   let post_text = req.body.params.post_text;
   let post_likecount = 0;
@@ -107,7 +106,7 @@ app.post("/posts", (req, res) => {
   let values = [
     post_uuid,
     post_creator,
-    post_uid,
+    post_email,
     post_title,
     post_text,
     post_likecount,
@@ -115,7 +114,7 @@ app.post("/posts", (req, res) => {
   ];
 
   const sql =
-    "INSERT INTO posts (uuid, creator, uid, title, text, likecount, timestamp) VALUES(?, ?, ?, ?, ?, ?, ?)";
+    "INSERT INTO posts (uuid, creator, email, title, text, likecount, timestamp) VALUES(?, ?, ?, ?, ?, ?, ?)";
   con.query(sql, values, (err, result) => {
     if (err) console.log(err);
     else res.send(result);
@@ -127,7 +126,7 @@ app.post("/comments", (req, res) => {
   let post_uuid = req.body.params.post_uuid;
   let comment_uuid = uuid();
   let comment_creator = req.body.params.comment_creator;
-  let comment_uid = req.body.params.comment_uid;
+  let comment_email = req.body.params.comment_email;
   let comment_text = req.body.params.comment_text;
   let comment_likecount = 0;
   let comment_timestamp = new Date().getTime();
@@ -135,19 +134,80 @@ app.post("/comments", (req, res) => {
     post_uuid,
     comment_uuid,
     comment_creator,
-    comment_uid,
+    comment_email,
     comment_text,
     comment_likecount,
     comment_timestamp,
   ];
 
   const sql =
-    "INSERT INTO comments (uuid, uuid2, creator, uid, text, likecount, timestamp) VALUES(?, ?, ?, ?, ?, ?, ?)";
+    "INSERT INTO comments (uuid, uuid2, creator, email, text, likecount, timestamp) VALUES(?, ?, ?, ?, ?, ?, ?)";
   con.query(sql, values, (err, result) => {
     if (err) console.log(err);
     else res.send(result);
   });
   console.log("UUID:" + comment_uuid + " 로 댓글 생성됨.");
+});
+
+app.post("/posts/delete", (req, res) => {
+  const post_uuid = req.body.params.post_uuid;
+  /*
+  const post_email = req.query.post_email;
+
+  const sql_nickname =
+    "SELECT COUNT(*) AS result FROM 유저db WHERE email = '?'";
+  con.query(sql_nickname, post_email, (err, data) => {
+    if (!err) {
+      if (data.result < 1) {
+        res.send("실패");
+      } else {
+        //Delete문
+      }
+    } else {
+      res.send(err);
+    }
+  });
+  */
+
+  const sql_delete_post = "DELETE FROM webp_db.posts WHERE uuid = ?";
+  const sql_delete_all_comments = "DELETE FROM webp_db.comments WHERE uuid = ?";
+  con.query(sql_delete_post, post_uuid, function (err, result, fields) {
+    if (err) throw err;
+    console.log(result);
+  });
+  con.query(sql_delete_all_comments, post_uuid, function (err, result, fields) {
+    if (err) throw err;
+    console.log(result);
+    res.send("true");
+  });
+});
+
+app.post("/comments/delete", (req, res) => {
+  const comment_uuid = req.body.params.comment_uuid;
+  /*
+  const comment_email = req.query.comment_email;
+
+  const sql_nickname =
+    "SELECT COUNT(*) AS result FROM 유저db WHERE email = '?'";
+  con.query(sql_nickname, comment_email, (err, data) => {
+    if (!err) {
+      if (data.result < 1) {
+        res.send("실패");
+      } else {
+        //Delete문
+      }
+    } else {
+      res.send(err);
+    }
+  });
+  */
+
+  const sql_delete_comment = "DELETE FROM webp_db.comments WHERE uuid2 = ?";
+  con.query(sql_delete_comment, comment_uuid, function (err, result, fields) {
+    if (err) throw err;
+    console.log(result);
+    res.send("true");
+  });
 });
 
 /*
