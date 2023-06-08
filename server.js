@@ -5,13 +5,15 @@ const port = 8080;
 const cors = require("cors");
 const { v4 } = require("uuid");
 
+const bcrypt = require("bcrypt");
+
 const uuid = () => {
   const tokens = v4().split("-");
   return tokens[2] + tokens[1] + tokens[0] + tokens[3] + tokens[4];
 };
 
-const mysql = require("mysql");
-const con = mysql.createConnection({
+var mysql = require("mysql");
+var con = mysql.createConnection({
   host: "localhost",
   port: 3306,
   user: "root",
@@ -43,15 +45,27 @@ con.connect(function (err) {
   /*
   const sql_drop_posts_table = "DROP TABLE IF EXISTS posts;";
   const sql_drop_comments_table = "DROP TABLE IF EXISTS comments;";
+  const sql_drop_likelist_table = "DROP TABLE IF EXISTS likelist;";
+  const sql_drop_userTable_table = "DROP TABLE IF EXISTS userTable;";
   const sql_create_posts_table =
     "CREATE TABLE posts (uuid VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, email VARCHAR(32) NOT NULL, title VARCHAR(20) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (uuid), UNIQUE (uuid));";
   const sql_create_comments_table =
     "CREATE TABLE comments (uuid VARCHAR(32) NOT NULL, uuid2 VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, email VARCHAR(32) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (uuid2), UNIQUE (uuid2));";
+  const sql_create_likelist_table =
+    "CREATE TABLE likelist (no INT NOT NULL AUTO_INCREMENT, uuid VARCHAR(32) NOT NULL, email VARCHAR(32) NOT NULL,  PRIMARY KEY (no));";
+  const sql_create_userTable_table =
+    "CREATE TABLE userTable (no INT NOT NULL AUTO_INCREMENT, email VARCHAR(50) NOT NULL, username VARCHAR(10) NOT NULL, password VARCHAR(255) NOT NULL, PRIMARY KEY (no));";
 
   con.query(sql_drop_posts_table, function (err, result) {
     if (err) throw err;
   });
   con.query(sql_drop_comments_table, function (err, result) {
+    if (err) throw err;
+  });
+  con.query(sql_drop_likelist_table, function (err, result) {
+    if (err) throw err;
+  });
+  con.query(sql_drop_userTable_table, function (err, result) {
     if (err) throw err;
   });
   con.query(sql_create_posts_table, function (err, result) {
@@ -60,12 +74,19 @@ con.connect(function (err) {
   con.query(sql_create_comments_table, function (err, result) {
     if (err) throw err;
   });
-  console.log("posts, comments table 생성 됨");
+  con.query(sql_create_likelist_table, function (err, result) {
+    if (err) throw err;
+  });
+  con.query(sql_create_userTable_table, function (err, result) {
+    if (err) throw err;
+  });
+  console.log("posts, comments, likelist, userTable table 생성 됨");
   */
 });
 
 app.use(express.json());
 app.use(cors());
+app.use(express.urlencoded({ extended: true }));
 
 app.listen(port, () =>
   console.log(`서버 포트 할당 됨~ 사용 포트: http://localhost:${port}`)
@@ -79,12 +100,103 @@ app.get("/", function (request, response) {
   );
 });
 
+app.post("/login", (req, res) => {
+  const user_email = req.body.user_email;
+  const user_pw = req.body.user_pw;
+  const sendData = { isLogin: "" };
+
+  if (user_email && user_pw) {
+    con.query(
+      "SELECT * FROM userTable WHERE email = ?;",
+      [user_email],
+      function (err, results, fields) {
+        if (err) throw err;
+        if (results.length > 0) {
+          bcrypt.compare(user_pw, results[0].password, (err, result) => {
+            if (result === true) {
+              sendData.isLogin = "True";
+              res.send(sendData);
+            } else {
+              sendData.isLogin = "비밀번호가 일치하지 않습니다.";
+              res.send(sendData);
+            }
+          });
+        } else {
+          sendData.isLogin = "아이디 정보가 일치하지 않습니다.";
+          res.send(sendData);
+        }
+      }
+    );
+  } else {
+    sendData.isLogin = "아이디와 비밀번호를 입력하세요!";
+    res.send(sendData);
+  }
+});
+
+app.post("/signin", (req, res) => {
+  const user_email = req.body.user_email;
+  const user_username = req.body.user_username;
+  const user_pw = req.body.user_pw;
+  const user_pw2 = req.body.user_pw2;
+
+  const sendData = { isSuccess: "" };
+
+  if (user_email && user_username && user_pw && user_pw2) {
+    con.query(
+      "SELECT * FROM userTable WHERE email = ?;",
+      [user_email],
+      function (err, results, fields) {
+        if (err) throw err;
+        if (results.length <= 0 && user_pw == user_pw2) {
+          const hasedPw = bcrypt.hashSync(user_pw, 10);
+          con.query(
+            "INSERT INTO userTable (email, password, username) VALUES(?, ?, ?);",
+            [user_email, hasedPw, user_username],
+            function (error, data) {
+              if (error) throw error;
+              sendData.isSuccess = "True";
+              res.send(sendData);
+            }
+          );
+        } else if (user_pw != user_pw2) {
+          sendData.isSuccess = "입력된 비밀번호가 서로 다릅니다.";
+          res.send(sendData);
+        } else {
+          sendData.isSuccess = "이미 존재하는 아이디 입니다!";
+          res.send(sendData);
+        }
+      }
+    );
+  } else {
+    sendData.isSuccess = "아이디와 비밀번호를 입력하세요!";
+    res.send(sendData);
+  }
+});
+
+app.get("/username", (req, res) => {
+  const user_email = req.query.email;
+  const sql = "select username from userTable where email = ?;";
+  con.query(sql, user_email, function (err, result, fields) {
+    if (err) throw err;
+    res.json(result);
+  });
+});
+
 // posts table의 data를 timestamp 내림차순으로 가져오는 api
 app.get(`/posts/all`, (req, res) => {
   const sql = `select * from posts order by timestamp desc;`;
   con.query(sql, function (err, result, fields) {
     if (err) throw err;
     res.json(result);
+  });
+});
+
+// posts의 모든 글을 likecount의 내림차순으로 가져오는 API
+app.get(`/posts/all/populars`, (request, response) => {
+  const sql = `select * from posts order by likecount desc`;
+  con.query(sql, function (err, result, fields) {
+    if (err) throw err;
+    response.json(result);
   });
 });
 
@@ -105,6 +217,33 @@ app.get("/comments", (req, res) => {
     if (err) throw err;
     res.json(result);
   });
+});
+
+// posts의 post에서 email이 좋아요를 눌렀는지 가져오는 api
+app.get("/posts/likelist", (req, res) => {
+  const post_uuid = req.query.uuid;
+  const post_email = req.query.email;
+  const sql =
+    "select COUNT(*) AS result from likelist where uuid = ? email = ?";
+  con.query(sql, [post_uuid, post_email], function (err, result, fields) {
+    if (err) throw err;
+    res.json(result);
+  });
+});
+// comments에서 email이 좋아요를 누른 글들 목록 가져오는 api
+app.get("/comments/likelist", (req, res) => {
+  const comments_uuid = req.query.uuid;
+  const comments_email = req.query.email;
+  const sql =
+    "select COUNT(*) AS result from likelist where uuid = ? email = ?";
+  con.query(
+    sql,
+    [comments_uuid, comments_email],
+    function (err, result, fields) {
+      if (err) throw err;
+      res.json(result);
+    }
+  );
 });
 
 // posts table에 data를 삽입하는 api
@@ -155,12 +294,36 @@ app.post("/comments", (req, res) => {
   ];
 
   const sql =
-    "INSERT INTO comments (uuid, uuid2, creator, email, text, likecount, timestamp) VALUES(?, ?, ?, ?, ?, ?, ?)";
+    "INSERT INTO comments (uuid, uuid2, creator, email, text, likecount, timestamp) VALUES(?, ?, ?, ?, ?, ?, ?);";
   con.query(sql, values, (err, result) => {
     if (err) console.log(err);
     else res.send(result);
   });
   console.log("UUID:" + comment_uuid + " 로 댓글 생성됨.");
+});
+
+// posts의 post에 좋아요를 눌렀을 때 likelist에 기록되는 api
+app.post("/likelist/posts", (req, res) => {
+  let post_uuid = req.body.params.post_uuid;
+  let post_email = req.body.params.post_eamil;
+  let values = [post_uuid, post_email];
+  const sql = "INSERT INTO likelist (uuid, email) VALUE (? , ?);";
+  con.query(sql, values, (err, result) => {
+    if (err) console.log(err);
+    else res.send(result);
+  });
+});
+
+// comments의 comment에 좋아요를 눌렀을 때 likelist에 기록되는 api
+app.post("/likelist/comments", (req, res) => {
+  let comments_uuid = req.body.params.post_uuid2;
+  let comments_email = req.body.params.post_eamil;
+  let values = [comments_uuid, comments_email];
+  const sql = "INSERT INTO likelist (uuid, email) VALUE (? , ?);";
+  con.query(sql, values, (err, result) => {
+    if (err) console.log(err);
+    else res.send(result);
+  });
 });
 
 // posts table의 특정 uuid를 가진 게시물의 text를 update하는 api
@@ -301,18 +464,45 @@ app.post("/comments/delete", (req, res) => {
   console.log("uuid: " + comment_uuid + " 의 댓글이 삭제되었습니다.");
 });
 
-/*
+// likelist table에서 posts_uuid의 email이 좋아요 누른 기록 삭제하는 api
+app.post("/likelist/delete/posts", (req, res) => {
+  const posts_uuid = req.body.params.posts_uuid;
+  const posts_email = req.body.params.posts_email;
 
-app.get(`/populars`, (request, response) => {
-  const sql = `select * from webpdb order by likecount desc`;
-  con.query(sql, function (err, result, fields) {
+  const sql = "DELTE FROM webp_db.likelist WHERE uuid = ? email = ?";
+  con.query(sql, [posts_uuid, posts_email], function (err, result, fields) {
     if (err) throw err;
-    response.json(result);
+    console.log(result);
+    res.send("true");
   });
+  console.log(
+    "uuid: " + posts_uuid + " 에서 email: " + posts_email + " 의 좋아요 취소"
+  );
 });
 
+// likelist table에서 comments_uuid의 email이 좋아요 누른 기록 삭제하는 api
+app.post("/likelist/delete/comments", (req, res) => {
+  const comments_uuid = req.body.params.posts_uuid;
+  const comments_email = req.body.params.posts_email;
 
-*/
+  const sql = "DELTE FROM webp_db.likelist WHERE uuid = ? email = ?";
+  con.query(
+    sql,
+    [comments_uuid, comments_email],
+    function (err, result, fields) {
+      if (err) throw err;
+      console.log(result);
+      res.send("true");
+    }
+  );
+  console.log(
+    "uuid: " +
+      comments_uuid +
+      " 에서 email: " +
+      comments_email +
+      " 의 좋아요 취소"
+  );
+});
 
 app.get("*", function (request, response) {
   response.sendFile(
