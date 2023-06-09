@@ -42,7 +42,7 @@ con.connect(function (err) {
 
   // 위에 주석 처리 된거 풀고 1회 실행 한 뒤 아래도 똑같이 실행해주세요.
   // 최초 실행 이후엔 다시 주석처리 해야 DB 초기화 되지 않습니다~
-/*
+  /*
   const sql_drop_posts_table = "DROP TABLE IF EXISTS posts;";
   const sql_drop_comments_table = "DROP TABLE IF EXISTS comments;";
   const sql_drop_likelist_table = "DROP TABLE IF EXISTS likelist;";
@@ -482,6 +482,7 @@ app.post("/likelist/delete/comments", (req, res) => {
   );
 });
 
+//해당 코드가 제일 하단에 있어야합니다
 app.get("*", function (request, response) {
   response.sendFile(
     path.join(__dirname, "web-team-proj-5-front/build/index.html")
@@ -490,12 +491,17 @@ app.get("*", function (request, response) {
 
 //로그인 api로 부터 정보 가져와서 확인하는 절차
 //현재 우선 유저에 대한 usertable에 할당시켜둠
-app.post('/countData', (req, res)=> {
-  const {data} = req.body;
-  con.query('SELECT COUNT(*)FROM usertable WHERE email = ?', [data], (err, result)=> {
-    if(err) {console.error(err);
-    return;
+app.post("/countData", (req, res) => {
+  const { data } = req.body;
+  con.query(
+    "SELECT COUNT(*)FROM usertable WHERE email = ?",
+    [data],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      res.json({ result }); //데이터 결과 전송
     }
-    res.json({result}); //데이터 결과 전송
-  });
+  );
 });
