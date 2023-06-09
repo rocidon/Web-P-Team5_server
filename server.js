@@ -509,3 +509,15 @@ app.get("*", function (request, response) {
     path.join(__dirname, "web-team-proj-5-front/build/index.html")
   );
 });
+
+//로그인 api로 부터 정보 가져와서 확인하는 절차
+//현재 우선 유저에 대한 DataTable이 없어 post로 진행하였음.
+app.post('/countData', (req, res)=> {
+  const {data} = req.body;
+  con.query('SELECT * FROM post WHERE email = ?', [data], (err, result)=> {
+    if(err) {console.error(err);
+    return;
+    }
+    res.json({result}); //데이터 결과 전송
+  });
+});
