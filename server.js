@@ -514,7 +514,7 @@ app.get("*", function (request, response) {
 //현재 우선 유저에 대한 usertable에 할당시켜둠
 app.post('/countData', (req, res)=> {
   const {data} = req.body;
-  con.query('SELECT * FROM usertable WHERE email = ?', [data], (err, result)=> {
+  con.query('SELECT COUNT(*)FROM usertable WHERE email = ?', [data], (err, result)=> {
     if(err) {console.error(err);
     return;
     }
