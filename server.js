@@ -43,45 +43,45 @@ con.connect(function (err) {
   // 위에 주석 처리 된거 풀고 1회 실행 한 뒤 아래도 똑같이 실행해주세요.
   // 최초 실행 이후엔 다시 주석처리 해야 DB 초기화 되지 않습니다~
   /*
-  const sql_drop_posts_table = "DROP TABLE IF EXISTS posts;";
-  const sql_drop_comments_table = "DROP TABLE IF EXISTS comments;";
-  const sql_drop_likelist_table = "DROP TABLE IF EXISTS likelist;";
-  const sql_drop_userTable_table = "DROP TABLE IF EXISTS userTable;";
-  const sql_create_posts_table =
-    "CREATE TABLE posts (uuid VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, email VARCHAR(32) NOT NULL, title VARCHAR(20) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (uuid), UNIQUE (uuid));";
-  const sql_create_comments_table =
-    "CREATE TABLE comments (uuid VARCHAR(32) NOT NULL, uuid2 VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, email VARCHAR(32) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (uuid2), UNIQUE (uuid2));";
-  const sql_create_likelist_table =
-    "CREATE TABLE likelist (no INT NOT NULL AUTO_INCREMENT, uuid VARCHAR(32) NOT NULL, email VARCHAR(32) NOT NULL,  PRIMARY KEY (no));";
-  const sql_create_userTable_table =
-    "CREATE TABLE userTable (no INT NOT NULL AUTO_INCREMENT, email VARCHAR(50) NOT NULL, username VARCHAR(10) NOT NULL, password VARCHAR(255) NOT NULL, PRIMARY KEY (no));";
-
-  con.query(sql_drop_posts_table, function (err, result) {
-    if (err) throw err;
-  });
-  con.query(sql_drop_comments_table, function (err, result) {
-    if (err) throw err;
-  });
-  con.query(sql_drop_likelist_table, function (err, result) {
-    if (err) throw err;
-  });
-  con.query(sql_drop_userTable_table, function (err, result) {
-    if (err) throw err;
-  });
-  con.query(sql_create_posts_table, function (err, result) {
-    if (err) throw err;
-  });
-  con.query(sql_create_comments_table, function (err, result) {
-    if (err) throw err;
-  });
-  con.query(sql_create_likelist_table, function (err, result) {
-    if (err) throw err;
-  });
-  con.query(sql_create_userTable_table, function (err, result) {
-    if (err) throw err;
-  });
-  console.log("posts, comments, likelist, userTable table 생성 됨");
-*/
+    const sql_drop_posts_table = "DROP TABLE IF EXISTS posts;";
+    const sql_drop_comments_table = "DROP TABLE IF EXISTS comments;";
+    const sql_drop_likelist_table = "DROP TABLE IF EXISTS likelist;";
+    const sql_drop_userTable_table = "DROP TABLE IF EXISTS userTable;";
+    const sql_create_posts_table =
+      "CREATE TABLE posts (uuid VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, email VARCHAR(32) NOT NULL, title VARCHAR(20) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (uuid), UNIQUE (uuid));";
+    const sql_create_comments_table =
+      "CREATE TABLE comments (uuid VARCHAR(32) NOT NULL, uuid2 VARCHAR(32) NOT NULL, creator VARCHAR(10) NOT NULL, email VARCHAR(32) NOT NULL, text VARCHAR(200) NOT NULL, likecount INT NOT NULL, timestamp VARCHAR(13) NOT NULL, PRIMARY KEY (uuid2), UNIQUE (uuid2));";
+    const sql_create_likelist_table =
+      "CREATE TABLE likelist (no INT NOT NULL AUTO_INCREMENT, uuid VARCHAR(32) NOT NULL, email VARCHAR(32) NOT NULL,  PRIMARY KEY (no));";
+    const sql_create_userTable_table =
+      "CREATE TABLE userTable (no INT NOT NULL AUTO_INCREMENT, email VARCHAR(50) NOT NULL, username VARCHAR(10) NOT NULL, password VARCHAR(255) NOT NULL, PRIMARY KEY (no));";
+  
+    con.query(sql_drop_posts_table, function (err, result) {
+      if (err) throw err;
+    });
+    con.query(sql_drop_comments_table, function (err, result) {
+      if (err) throw err;
+    });
+    con.query(sql_drop_likelist_table, function (err, result) {
+      if (err) throw err;
+    });
+    con.query(sql_drop_userTable_table, function (err, result) {
+      if (err) throw err;
+    });
+    con.query(sql_create_posts_table, function (err, result) {
+      if (err) throw err;
+    });
+    con.query(sql_create_comments_table, function (err, result) {
+      if (err) throw err;
+    });
+    con.query(sql_create_likelist_table, function (err, result) {
+      if (err) throw err;
+    });
+    con.query(sql_create_userTable_table, function (err, result) {
+      if (err) throw err;
+    });
+    console.log("posts, comments, likelist, userTable table 생성 됨");
+  */
 });
 
 app.use(express.json());
@@ -296,6 +296,49 @@ app.get("/comments/likelist/count", (req, res) => {
   });
 });
 
+/* 권민성이 작성한 api */
+// 1. 작성게시물 좋아요순
+app.get("/me/posts/likelist", (req, res) => {
+
+  let email = req.query.email;
+  const sql = `select * from posts where email = ? order by likecount desc`;
+  con.query(sql, [email], function (err, result, fields) {
+    if (err) throw err;
+    res.json(result);
+
+  });
+});
+
+// 2. 작성게시물 최신업로드순
+app.get("/me/posts/recent", (req, res) => {
+  let email = req.query.email;
+  const sql = `select * from posts where email = ? order by timestamp desc`;
+  con.query(sql, [email], function (err, result, fields) {
+    if (err) throw err;
+    res.json(result);
+  });
+});
+
+// 3. 작성댓글 좋아요순
+app.get("/me/comments/likelist", (req, res) => {
+  let email = req.query.email;
+  const sql = `select * from comments where email = ? order by likecount desc`;
+  con.query(sql, [email], function (err, result, fields) {
+    if (err) throw err;
+    res.json(result);
+  });
+});
+
+// 4. 작성댓글 최신업로드순 
+app.get("/me/comments/recent", (req, res) => {
+  let email = req.query.email;
+  const sql = `select * from comments where email = ? order by timestamp desc`;
+  con.query(sql, [email], function (err, result, fields) {
+    if (err) throw err;
+    res.json(result);
+  });
+});
+
 // posts table에 data를 삽입하는 api -created by JungJaeSeung
 app.post("/posts", (req, res) => {
   let post_uuid = uuid();
@@ -475,10 +518,10 @@ app.post("/likelist/delete/comments", (req, res) => {
   );
   console.log(
     "uuid2: " +
-      comments_uuid2 +
-      " 에서 email: " +
-      comments_email +
-      " 의 좋아요 취소"
+    comments_uuid2 +
+    " 에서 email: " +
+    comments_email +
+    " 의 좋아요 취소"
   );
 });
 
